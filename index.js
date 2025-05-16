@@ -1,5 +1,7 @@
 import dotenv from "dotenv";
 import { VapiClient, VapiError } from "@vapi-ai/server-sdk";
+import fs from "fs";
+import path from "path";
 
 dotenv.config();
 
@@ -16,25 +18,25 @@ async function main() {
       model: {
         provider: "openai",
         //model: "gpt-4o-mini-realtime-preview-2024-12-17"
-        model: "gpt-4o"
+        model: "gpt-4o",
       },
       voice: {
         provider: "11labs",
-        voiceId: "HbE0EqRqg133Y96c3qXU"
-      }
+        voiceId: "HbE0EqRqg133Y96c3qXU",
+      },
     });
     const assistantId = createResp.id;
 
     // 2) Dial out to your number using that assistant ID
     const callResp = await client.calls.create({
-      //assistantId: assistantId, 
+      assistantId: assistantId,
       phoneNumberId: "eb10c951-0f0c-4829-b9c8-1dc02d186027",
       customers: [
         {
           number: target,
         },
       ],
-      workflowId: "00cea89c-2651-4fef-91ea-b15d5e2f082b"
+      //workflowId: "00cea89c-2651-4fef-91ea-b15d5e2f082b",
     });
     console.log("Outbound call initiated:", callResp);
   } catch (err) {
@@ -47,7 +49,7 @@ async function main() {
 }
 
 function workflow() {
-  const workflowId = '00cea89c-2651-4fef-91ea-b15d5e2f082b'
+  const workflowId = "00cea89c-2651-4fef-91ea-b15d5e2f082b";
   const apiKey = process.env.VAPI_TOKEN;
 
   fetch(`https://api.vapi.ai/workflow/${workflowId}`, {
@@ -68,6 +70,22 @@ function workflow() {
     });
 }
 
+function loadCustomerData() {
+  const filePath = path.join(process.cwd(), "test_data.json");
+  const fileData = fs.readFileSync(filePath, "utf-8");
+  return JSON.parse(fileData);
+}
+
+function displayCustomerInfo() {
+  const customers = loadCustomerData();
+  customers.forEach((customer) => {
+    const message = `Name: ${customer.Name}, Number: ${customer.Number}, Enquiry Type: ${customer.enquiryType}, Date: ${customer.enquiryDate}`;
+    console.log(message);
+  });
+}
+
+displayCustomerInfo();
+
 //workflow();
 
-main();
+//main();
