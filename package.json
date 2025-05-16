@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@vapi-ai/server-sdk": "^0.7.0",
+    "dotenv": "^16.5.0"
+  }
+}
