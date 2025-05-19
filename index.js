@@ -30,6 +30,11 @@ async function main() {
     // 2) Dial out to your number using that assistant ID
     const callResp = await client.calls.create({
       assistantId: assistantId,
+      assistantOverrides: {
+        variableValues: {
+          name: "John",
+        },
+      },
       phoneNumberId: "eb10c951-0f0c-4829-b9c8-1dc02d186027",
       customers: [
         {
