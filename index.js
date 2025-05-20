@@ -8,71 +8,36 @@ dotenv.config();
 const client = new VapiClient({ token: process.env.VAPI_TOKEN });
 
 async function main() {
-  const target = process.env.TARGET_NUMBER;
-  if (!target) throw new Error("Set TARGET_NUMBER in your .env");
+  const customersData = loadCustomerData();
+  const assistantId = "33ed4652-9db0-4894-8228-0d67a2d32e49";
 
-  try {
-    // 1) Create the assistant and grab its id
-    const createResp = await client.assistants.create({
-      name: "OutboundDialerAssistantV3",
-      model: {
-        provider: "openai",
-        //model: "gpt-4o-mini-realtime-preview-2024-12-17"
-        model: "gpt-4o",
-      },
-      voice: {
-        provider: "11labs",
-        voiceId: "HbE0EqRqg133Y96c3qXU",
-      },
-    });
-    const assistantId = createResp.id;
-
-    // 2) Dial out to your number using that assistant ID
-    const callResp = await client.calls.create({
-      assistantId: assistantId,
-      assistantOverrides: {
-        variableValues: {
-          name: "John",
+  for (const customer of customersData) {
+    try {
+      const callResp = await client.calls.create({
+        assistantId: assistantId,
+        assistantOverrides: {
+          variableValues: {
+            first_name: customer.Name,
+            enquiry_type: customer.enquiryType,
+            enquiry_date: customer.enquiryDate,
+          },
         },
-      },
-      phoneNumberId: "eb10c951-0f0c-4829-b9c8-1dc02d186027",
-      customers: [
-        {
-          number: target,
-        },
-      ],
-      //workflowId: "00cea89c-2651-4fef-91ea-b15d5e2f082b",
-    });
-    console.log("Outbound call initiated:", callResp);
-  } catch (err) {
-    if (err instanceof VapiError) {
-      console.error("VAPI error:", err.statusCode, err.message, err.body);
-    } else {
-      console.error(err);
+        phoneNumberId: "eb10c951-0f0c-4829-b9c8-1dc02d186027",
+        customers: [
+          {
+            number: customer.Number,
+          },
+        ],
+      });
+      console.log("Outbound call initiated:", callResp);
+    } catch (err) {
+      if (err instanceof VapiError) {
+        console.error("VAPI error:", err.statusCode, err.message, err.body);
+      } else {
+        console.error(err);
+      }
     }
   }
-}
-
-function workflow() {
-  const workflowId = "00cea89c-2651-4fef-91ea-b15d5e2f082b";
-  const apiKey = process.env.VAPI_TOKEN;
-
-  fetch(`https://api.vapi.ai/workflow/${workflowId}`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-    },
-  })
-    .then((response) => {
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      return response.json();
-    })
-    .then((data) => {
-      console.log("workflow", data);
-    })
-    .catch((err) => {
-      console.error("Request failed:", err);
-    });
 }
 
 function loadCustomerData() {
@@ -81,16 +46,31 @@ function loadCustomerData() {
   return JSON.parse(fileData);
 }
 
-function displayCustomerInfo() {
-  const customers = loadCustomerData();
-  customers.forEach((customer) => {
-    const message = `Name: ${customer.Name}, Number: ${customer.Number}, Enquiry Type: ${customer.enquiryType}, Date: ${customer.enquiryDate}`;
-    console.log(message);
+async function capsuleFetch() {
+  const apiUrl =
+    "https://api.capsulecrm.com/api/v2/opportunities?since=2025-05-19T00:00:00Z";
+  const apiKey = process.env.CAPSULE_API_KEY;
+
+  const response = await fetch(apiUrl, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      Accept: "application/json",
+    },
   });
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch tasks: ${response.status} ${response.statusText}`
+    );
+  }
+
+  const data = await response.json();
+  const opportunities = data.result ? data.result.opportunities : data.opportunities;
+  const firstOpportunity = opportunities ? opportunities[0] : undefined;
+  console.log("response", firstOpportunity);
 }
 
-displayCustomerInfo();
-
-//workflow();
+capsuleFetch()
 
 //main();
