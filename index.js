@@ -30,12 +30,11 @@ async function main() {
         ],
       });
       console.log("Outbound call initiated:", callResp);
-      console.log("Polling for end of call")
+      console.log("Polling for end of call");
 
       //Is this the best way to call this func below? does it need timing?
 
-      handleCallsEnd()
-
+      handleCallsEnd();
     } catch (err) {
       if (err instanceof VapiError) {
         console.error("VAPI error:", err.statusCode, err.message, err.body);
@@ -88,18 +87,20 @@ async function sendDataToCapsule(summary, capsuleId, endReason) {
   const apiKey = process.env.CAPSULE_API_KEY;
 
   const body = {
-    type: "note",
-    content: { callSummary: summary, callEndReason: endReason },
-    activityType: -1,
-    party: { id: capsuleId },
+    entry: {
+      party: { id: capsuleId },
+      activityType: -1,
+      type: "note",
+      content: `callSummary: ${summary}, callEndReason: ${endReason}`
+    },
   };
 
   const response = await fetch(apiUrl, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${apiKey}`,
-      Accept: "application/json",
-      "Content-Type": "application/json",
+      'Authorization': `Bearer ${apiKey}`,
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify(body),
   });
@@ -117,5 +118,11 @@ async function sendDataToCapsule(summary, capsuleId, endReason) {
   console.log("Added to capsule:", entry);
   return entry;
 }
+
+const summary_test = "yo yo yo test summary";
+const endReason_test = "too cool";
+const capsule_id_test = 257408752;
+
+sendDataToCapsule(summary_test, capsule_id_test, endReason_test);
 
 //main();
